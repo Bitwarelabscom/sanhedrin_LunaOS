@@ -153,7 +153,7 @@ class TaskManager:
         )
 
         # Initialize state machine
-        state_machine = TaskStateMachine(task_id=task_id)
+        state_machine = TaskStateMachine()
 
         # Store
         self._tasks[task_id] = task
@@ -193,14 +193,14 @@ class TaskManager:
         state_machine = self._state_machines[task_id]
 
         # Attempt transition
-        if not state_machine.can_transition(new_state):
+        if not state_machine.can_transition_to(new_state):
             raise InvalidStateTransitionError(
-                task_id=task_id,
-                current_state=state_machine.current_state,
-                target_state=new_state,
+                from_state=state_machine.current_state,
+                to_state=new_state,
+                valid_transitions=state_machine.get_valid_transitions(),
             )
 
-        state_machine.transition(new_state)
+        state_machine.transition_to(new_state)
 
         # Update task
         task.status.state = new_state
@@ -400,8 +400,8 @@ class TaskManager:
         ).message
 
         state_machine = self._state_machines[task_id]
-        if state_machine.can_transition(TaskState.FAILED):
-            state_machine.transition(TaskState.FAILED)
+        if state_machine.can_transition_to(TaskState.FAILED):
+            state_machine.transition_to(TaskState.FAILED)
 
     def _extract_prompt(self, task: Task) -> str:
         """Extract prompt text from task's last user message."""

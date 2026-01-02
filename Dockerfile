@@ -16,25 +16,35 @@ COPY pyproject.toml README.md ./
 COPY src/ ./src/
 
 RUN pip install --no-cache-dir build && \
-    python -m build --wheel && \
-    pip wheel --no-cache-dir --wheel-dir /app/wheels -e ".[server,cli]"
+    python -m build --wheel
 
 
 # Production stage
 FROM python:3.11-slim as production
 
+# Install Node.js for Claude Code CLI
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Claude Code CLI
+RUN npm install -g @anthropic-ai/claude-code
+
 # Security: Create non-root user
 RUN groupadd --gid 1000 sanhedrin && \
-    useradd --uid 1000 --gid sanhedrin --shell /bin/bash --create-home sanhedrin
+    useradd --uid 1000 --gid sanhedrin --shell /bin/bash --create-home sanhedrin && \
+    mkdir -p /home/sanhedrin/.claude && \
+    chown -R sanhedrin:sanhedrin /home/sanhedrin
 
 WORKDIR /app
 
-# Install only runtime dependencies
-COPY --from=builder /app/wheels /wheels
+# Install sanhedrin with extras
 COPY --from=builder /app/dist /dist
 
-RUN pip install --no-cache-dir /dist/*.whl && \
-    rm -rf /wheels /dist
+RUN pip install --no-cache-dir "/dist/sanhedrin-0.1.0-py3-none-any.whl[server,cli]" httpx && \
+    rm -rf /dist
 
 # Security: Run as non-root user
 USER sanhedrin

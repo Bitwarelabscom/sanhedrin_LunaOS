@@ -13,7 +13,8 @@ from sanhedrin.core.types import (
     TextPart,
     FilePart,
     DataPart,
-    FileInfo,
+    FileWithBytes,
+    FileWithUri,
     # Messages
     Message,
     # Tasks
@@ -58,7 +59,8 @@ __all__ = [
     "TextPart",
     "FilePart",
     "DataPart",
-    "FileInfo",
+    "FileWithBytes",
+    "FileWithUri",
     "Message",
     "Task",
     "TaskStatus",

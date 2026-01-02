@@ -16,6 +16,8 @@ from typing import TYPE_CHECKING, Any, AsyncIterator
 from sanhedrin.core.types import (
     JSONRPCRequest,
     JSONRPCResponse,
+    JSONRPCSuccessResponse,
+    JSONRPCErrorResponse,
     JSONRPCError,
     Message,
     Role,
@@ -109,7 +111,7 @@ class JSONRPCHandler:
                     f"Method not implemented: {request.method}",
                 )
 
-            return JSONRPCResponse(
+            return JSONRPCSuccessResponse(
                 id=request.id,
                 result=result,
             )
@@ -181,7 +183,7 @@ class JSONRPCHandler:
                                 "taskId": event.task_id,
                                 "contextId": event.context_id,
                                 "status": {
-                                    "state": event.status.state.value,
+                                    "state": event.status.state.value if hasattr(event.status.state, 'value') else str(event.status.state),
                                     "createdAt": event.status.created_at.isoformat() if event.status.created_at else None,
                                     "updatedAt": event.status.updated_at.isoformat() if event.status.updated_at else None,
                                 },
@@ -297,17 +299,19 @@ class JSONRPCHandler:
 
     def _serialize_task(self, task: Any) -> dict:
         """Serialize task for response."""
+        state = task.status.state
+        state_value = state.value if hasattr(state, 'value') else str(state)
         return {
             "taskId": task.id,
             "contextId": task.context_id,
             "status": {
-                "state": task.status.state.value,
+                "state": state_value,
                 "createdAt": task.status.created_at.isoformat() if task.status.created_at else None,
                 "updatedAt": task.status.updated_at.isoformat() if task.status.updated_at else None,
             },
             "history": [
                 {
-                    "role": msg.role.value,
+                    "role": msg.role.value if hasattr(msg.role, 'value') else str(msg.role),
                     "parts": [self._serialize_part(p) for p in msg.parts],
                 }
                 for msg in task.history
@@ -337,9 +341,9 @@ class JSONRPCHandler:
         request_id: str | int | None,
         code: int,
         message: str,
-    ) -> JSONRPCResponse:
+    ) -> JSONRPCErrorResponse:
         """Create error response."""
-        return JSONRPCResponse(
+        return JSONRPCErrorResponse(
             id=request_id,
             error=JSONRPCError(
                 code=code,

@@ -206,6 +206,12 @@ class TaskStatus(SanhedrinBaseModel):
     timestamp: str | None = Field(
         default_factory=utc_now_iso, description="ISO 8601 timestamp"
     )
+    created_at: datetime | None = Field(
+        default=None, description="When the status was created"
+    )
+    updated_at: datetime | None = Field(
+        default=None, description="When the status was last updated"
+    )
 
 
 class Artifact(SanhedrinBaseModel):
@@ -328,6 +334,14 @@ class AgentInterface(SanhedrinBaseModel):
         description="Transport protocol",
     )
     tenant: str | None = Field(default=None, description="Optional tenant identifier")
+
+
+class AgentAuthentication(SanhedrinBaseModel):
+    """Agent authentication configuration."""
+
+    schemes: list[str] = Field(
+        default_factory=list, description="Supported authentication schemes"
+    )
 
 
 class SecurityScheme(SanhedrinBaseModel):
